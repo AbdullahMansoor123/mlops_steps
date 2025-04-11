@@ -1,61 +1,37 @@
-from torch.utils.data import DataLoader
-from datasets import load_dataset
-from transformers import AutoTokenizer
+from torch.utils.data import DataLoader, random_split
+from torchvision import datasets, transforms
 
 
-
-class DataModule:
-    def __init__(self, dataset_name='imdb', model_name="bert-base-uncased", max_length=512, batch_size=8, reduce_fraction = 0.10):
-        # self.tokenizer = tokenizer
-        self.max_length = max_length
+# Data Module
+class MNISTDataModule:
+    def __init__(self, batch_size=64, val_split=0.1, test_split=0.1):
         self.batch_size = batch_size
-        self.reduce_fraction = reduce_fraction
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.prepare_data(dataset_name)
-        self.prepare_dataloader()
-    
-    def prepare_data(self, dataset_name):
-        dataset = load_dataset(dataset_name)
+        self.val_split = val_split
+        self.test_split = test_split
+        self.transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+        ])
 
-        def reduce_split(split):
-            reduced_size = int(len(split) * self.reduce_fraction)
-            return split.select(range(reduced_size))
+    def setup(self):
+        dataset = datasets.MNIST(root='./data', train=True, transform=self.transform, download=True)
+        test_dataset = datasets.MNIST(root='./data', train=False, transform=self.transform)
 
-        self.train_data = reduce_split(dataset['train'])
-        self.val_data = reduce_split(dataset['test'].select(range(len(dataset['test']) // 2)))
-        self.test_data = reduce_split(dataset['unsupervised'].select(range(len(dataset['test']) // 2, len(dataset['test']))))
+        train_len = int(len(dataset) * (1 - self.val_split - self.test_split))
+        val_len = int(len(dataset) * self.val_split)
+        test_len = len(dataset) - train_len - val_len
+        train_data, val_data, _ = random_split(dataset, [train_len, val_len, test_len])
 
-        self.train_encodings = self.train_data.map(self.tokenize_data, batched=True)
-        self.train_encodings.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
-
-        self.val_encodings = self.val_data.map(self.tokenize_data, batched=True)
-        self.val_encodings.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
-
-        self.test_encodings = self.test_data.map(self.tokenize_data, batched=True)
-        self.test_encodings.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
-
-    def tokenize_data(self, data):
-        return self.tokenizer(data['text'],
-                                padding="max_length", 
-                                truncation=True, 
-                                max_length=self.max_length)
-
-    
-    def prepare_dataloader(self):
-        self.train_loader = DataLoader(
-            self.train_encodings, batch_size=self.batch_size, shuffle=True)
-    
-        self.val_loader = DataLoader(
-            self.val_encodings, batch_size=self.batch_size, shuffle=False)
-    
-        self.test_loader = DataLoader(
-            self.test_encodings, batch_size=self.batch_size)
+        self.train_loader = DataLoader(train_data, batch_size=self.batch_size, shuffle=True)
+        self.val_loader = DataLoader(val_data, batch_size=self.batch_size, shuffle=False)
+        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
 
 
 # for testing the DataModule class
 
 # if __name__ == "__main__":
-#     data_model = DataModule()
-#     data_model.prepare_data(dataset_name='imdb')
+#     data_model = MNISTDataModule(batch_size=32, val_split=0.2, test_split=0.2)
+#     data_model.setup()
 #     batch = next(iter(data_model.train_loader))
+#     print(len(batch))
 #     print(batch)
