@@ -1,0 +1,8 @@
+data/*
+output/*
+wandb/*
+pipelines/__pycache__/*
+data/MNIST/raw/*
+*.pth
+test-area.ipynb
+test.yaml
