@@ -5,3 +5,9 @@ scikit-learn
 tqdm
 pandas
 matplotlib
+torchvision
+
+wandb
+
+hydra-core
+omegaconf
