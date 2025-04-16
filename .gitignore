@@ -6,3 +6,5 @@ data/MNIST/raw/*
 *.pth
 test-area.ipynb
 test.yaml
+.dvc
+google_cloud_key.json
