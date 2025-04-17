@@ -9,7 +9,7 @@ import wandb
 import omegaconf
 
 import hydra
-from omegaconf.omegaconf import OmegaConf
+
 
 
 @hydra.main(config_path="./configs", config_name="config")
@@ -19,20 +19,6 @@ def main(cfg):
     Main function to execute the entire workflow.
     """
 
-
-
-    config = {
-            "batch" : 32,
-            "epochs" : 3,
-            "val_split" : 0.2,
-            "test_split" : 0.2,
-            "num_classes" : 10,
-            "lr" : 3e-5,
-            "loss": "CrossEntropyLoss",
-            "optimizer": "AdamW",
-            "model": SimpleCNN,
-            "wandb_project": "mlops-steps"
-    }
     # print(OmegaConf.to_yaml(cfg))
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
