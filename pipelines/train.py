@@ -9,6 +9,8 @@ from torch import optim
 # import the library
 import wandb
 
+import hydra
+
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from sklearn.metrics import confusion_matrix
 
@@ -18,20 +20,26 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Training Module
 class Trainer:
-    def __init__(self, model, train_loader, val_loader,  loss,optimizer , epochs=5):
+    def __init__(self, model, train_loader, val_loader,  loss,optimizer, model_save_root , epochs=5):
         self.model = model.to(device)
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.criterion = loss
         self.optimizer = optimizer
         self.epochs = epochs
+        self.model_save_root = model_save_root
+        self.best_val_acc = 0.0
 
-        
         wandb.watch(self.model, log="all", log_freq=100)
 
-        if os.path.exists("mnist_cnn.pth"):
-            self.model.load_state_dict(torch.load("mnist_cnn.pth"))
-            print("Loaded pretrained weights.")
+        load_model_path = os.path.join(self.model_save_root, "models/new_mnist_cnn.pth")
+        if os.path.exists(load_model_path):
+            self.model.load_state_dict(torch.load(load_model_path))
+            print("Loaded last trained weights.")
+        else:
+            pre_trained_model_path = os.path.join(self.model_save_root, "mnist_cnn.pth")
+            self.model.load_state_dict(torch.load(pre_trained_model_path))
+            print("loaded pretrained weights.") 
 
     def train(self):
         for epoch in range(self.epochs):
@@ -58,9 +66,12 @@ class Trainer:
             
             wandb.log({"epoch": epoch + 1, "train_loss": train_loss, "train_accuracy": train_acc})
 
-            self.validate(epoch, train_acc, train_loss)
+            _, val_acc, _, _, _ = self.validate(epoch, train_acc, train_loss)
             
-            torch.save(self.model.state_dict(), "mnist_cnn.pth")
+            if val_acc > self.best_val_acc:
+                self.best_val_acc = val_acc
+                torch.save(self.model.state_dict(), os.path.join(self.model_save_root, "models/new_mnist_cnn.pth"))
+                print(f"Model saved with accuracy: {val_acc:.2f}%")
 
     def validate(self,epoch, train_loss,train_acc):
         self.model.eval()
@@ -103,5 +114,5 @@ class Trainer:
                         y_true=all_labels, y_pred=all_preds,
                         labels=class_names)})
 
-       
-
+        return val_loss, val_acc, precision, recall, f1
+    
