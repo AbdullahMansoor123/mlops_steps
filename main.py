@@ -1,3 +1,4 @@
+import os
 import torch
 from datetime import datetime
 import torch.nn as nn
@@ -11,15 +12,12 @@ import omegaconf
 import hydra
 
 
-
-@hydra.main(config_path="./configs", config_name="config")
+@hydra.main(config_path="./configs", config_name="config", version_base=None)
 
 def main(cfg):
     """
     Main function to execute the entire workflow.
     """
-
-    # print(OmegaConf.to_yaml(cfg))
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     data_module = MNISTDataModule(batch_size= cfg.processing.batch_size, 
@@ -41,6 +39,8 @@ def main(cfg):
     wandb.init(project= cfg.training.wandb_project, 
                 name= exp_name)
 
+    model_save_root = hydra.utils.get_original_cwd()
+    
     # Train the model
     training = Trainer(
                         model,
@@ -48,11 +48,12 @@ def main(cfg):
                         val_loader,
                         loss,
                         optimizer,
-                        epochs=cfg.training.epochs
-                    
+                        epochs=cfg.training.epochs,
+                        model_save_root = model_save_root 
                     )
     
     training.train()
+    
     
 if __name__ == "__main__":
     main()
