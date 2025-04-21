@@ -28,7 +28,7 @@ class Inference_Onnx:
             total += labels.size(0)
             correct += (predictions == labels.numpy()).sum().item()
 
-        print(f'Test Accuracy (ONNX): {100 * correct / total:.2f}%')
+        return f'Test Accuracy (ONNX): {100 * correct / total:.2f}%'
 
 
 data_module = MNISTDataModule()
