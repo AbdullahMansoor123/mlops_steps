@@ -1,0 +1,5 @@
+outs:
+- md5: 9601c7234e95be3227cc7a4563be9b6a
+  size: 1689800
+  hash: md5
+  path: new_mnist_cnn.pth

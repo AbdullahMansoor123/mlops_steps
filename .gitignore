@@ -1,10 +1,11 @@
 data/*
-output/*
+outputs/*
 wandb/*
-pipelines/__pycache__/*
+pipelines/__pycache__/*.pyc
+
 data/MNIST/raw/*
 *.pth
 test-area.ipynb
 test.yaml
-.dvc
+.dvc/*
 google_cloud_key.json
